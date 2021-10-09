@@ -154,6 +154,39 @@ class AndroidFlutterLocalNotificationsPlugin
                 }));
   }
 
+  /// a custom version of the [zonedSchedule] method for the use of the quotes
+  /// app.
+  Future<void> quoteCustomZonedSchedule(
+    int id,
+    String? title,
+    TZDateTime scheduledDate,
+    AndroidNotificationDetails? notificationDetails, {
+    required bool androidAllowWhileIdle,
+    String? payload,
+    DateTimeComponents? matchDateTimeComponents,
+  }) async {
+    validateId(id);
+    validateDateIsInTheFuture(scheduledDate, matchDateTimeComponents);
+    ArgumentError.checkNotNull(androidAllowWhileIdle, 'androidAllowWhileIdle');
+    final Map<String, Object?> serializedPlatformSpecifics =
+        notificationDetails?.toMap() ?? <String, Object>{};
+    serializedPlatformSpecifics['allowWhileIdle'] = androidAllowWhileIdle;
+    await _channel.invokeMethod(
+        'quote_custom_schedule',
+        <String, Object?>{
+          'id': id,
+          'title': title,
+          'platformSpecifics': serializedPlatformSpecifics,
+          'payload': payload ?? ''
+        }
+          ..addAll(scheduledDate.toMap())
+          ..addAll(matchDateTimeComponents == null
+              ? <String, Object>{}
+              : <String, Object>{
+                  'matchDateTimeComponents': matchDateTimeComponents.index
+                }));
+  }
+
   /// Shows a notification on a daily interval at the specified time.
   @Deprecated(
       'Deprecated due to problems with time zones. Use zonedSchedule instead.')

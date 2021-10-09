@@ -354,6 +354,50 @@ class FlutterLocalNotificationsPlugin {
     }
   }
 
+  /// a custom version of the [zonedSchedule] method for the use of the quotes
+  /// app. IMPLEMENTED FOR ANDROID ONLY!!
+  Future<void> quoteCustomZonedSchedule(
+    int id,
+    String? title,
+    String? body,
+    TZDateTime scheduledDate,
+    NotificationDetails notificationDetails, {
+    required UILocalNotificationDateInterpretation
+        uiLocalNotificationDateInterpretation,
+    required bool androidAllowWhileIdle,
+    String? payload,
+    DateTimeComponents? matchDateTimeComponents,
+  }) async {
+    if (kIsWeb) {
+      return;
+    }
+    if (_platform.isAndroid) {
+      await resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()!
+          .quoteCustomZonedSchedule(
+              id, title, scheduledDate, notificationDetails.android,
+              payload: payload,
+              androidAllowWhileIdle: androidAllowWhileIdle,
+              matchDateTimeComponents: matchDateTimeComponents);
+    } else if (_platform.isIOS) {
+      await resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.zonedSchedule(
+              id, title, body, scheduledDate, notificationDetails.iOS,
+              uiLocalNotificationDateInterpretation:
+                  uiLocalNotificationDateInterpretation,
+              payload: payload,
+              matchDateTimeComponents: matchDateTimeComponents);
+    } else if (_platform.isMacOS) {
+      await resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>()
+          ?.zonedSchedule(
+              id, title, body, scheduledDate, notificationDetails.macOS,
+              payload: payload,
+              matchDateTimeComponents: matchDateTimeComponents);
+    }
+  }
+
   /// Periodically show a notification using the specified interval.
   ///
   /// For example, specifying a hourly interval means the first time the

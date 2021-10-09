@@ -108,6 +108,7 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
     private static final String CANCEL_ALL_METHOD = "cancelAll";
     private static final String SCHEDULE_METHOD = "schedule";
     private static final String ZONED_SCHEDULE_METHOD = "zonedSchedule";
+    private static final String QUOTE_CUSTOM_SCHEDULE_METHOD = "quote_custom_schedule";
     private static final String PERIODICALLY_SHOW_METHOD = "periodicallyShow";
     private static final String SHOW_DAILY_AT_TIME_METHOD = "showDailyAtTime";
     private static final String SHOW_WEEKLY_AT_DAY_AND_TIME_METHOD = "showWeeklyAtDayAndTime";
@@ -1032,6 +1033,10 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
                 zonedSchedule(call, result);
                 break;
             }
+            case QUOTE_CUSTOM_SCHEDULE_METHOD: {
+                customZonedSchedule(call, result);
+                break;
+            }
             case PERIODICALLY_SHOW_METHOD:
             case SHOW_DAILY_AT_TIME_METHOD:
             case SHOW_WEEKLY_AT_DAY_AND_TIME_METHOD: {
@@ -1120,6 +1125,20 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
 
     private void zonedSchedule(MethodCall call, Result result) {
         Map<String, Object> arguments = call.arguments();
+        NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
+        if (notificationDetails != null) {
+            if (notificationDetails.matchDateTimeComponents != null) {
+                notificationDetails.scheduledDateTime = getNextFireDateMatchingDateTimeComponents(notificationDetails);
+            }
+            zonedScheduleNotification(applicationContext, notificationDetails, true);
+            result.success(null);
+        }
+    }
+
+    private void customZonedSchedule(MethodCall call, Result result) {
+        Map<String, Object> arguments = call.arguments();
+        Map<String, Object> quoteOfTheDay = getQuoteOfTheDay(applicationContext);
+        arguments.put("body", quoteOfTheDay.get("title") + " _" + quoteOfTheDay.get("author"));
         NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
         if (notificationDetails != null) {
             if (notificationDetails.matchDateTimeComponents != null) {
@@ -1435,4 +1454,61 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         applicationContext.stopService(new Intent(applicationContext, ForegroundService.class));
         result.success(null);
     }
+
+    
+    // public static Quote getQuoteFromDB(){
+    //     return quote;
+    // }
+
+    // public static void updateAndGetId(){
+    //     QuoteDbHelper dbHelper = new FeedReaderDbHelper(getContext());
+
+    // }
+
+    private static void saveNextDayId(Context context, int id) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("flutter."+"today_idlk", id + 1);
+        editor.apply();
+    }
+
+    private static int loadTodayId(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
+        return sharedPreferences.getInt("flutter."+"today_idlk", 0);
+    }
+
+    private static long fetchPlacesCount(SQLiteDatabase db) {
+        String sql = "SELECT COUNT(*) FROM " + QuoteDbHelper.TABLE_NAME;
+        SQLiteStatement statement = db.compileStatement(sql);
+        long count = statement.simpleQueryForLong();
+        return count;
+    }
+
+    private static Map<String, Object> getQuoteOfTheDay(Context context){
+        int id = loadTodayId(context);
+        QuoteDbHelper dbHelper = new QuoteDbHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int rowsCount = (int) fetchPlacesCount(db);
+        if (id >= rowsCount){
+            id = 0;
+        }
+        saveNextDayId(context, id);
+        String rawSql = "SELECT * FROM " + QuoteDbHelper.TABLE_NAME + " WHERE " + QuoteDbHelper.COLUMN_ID + " = " + Integer.toString(id);
+        Map<String, Object> quote = new HashMap<>();
+        Cursor cursor = db.rawQuery(rawSql, null);
+        if(cursor.moveToNext()){
+            // int itemId = cursor.getInt(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_ID));
+            String itemTitle = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_TITLE));
+            String author = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_AUTHOR));
+            // quote.put("id", rowsCount);
+            quote.put("title", itemTitle);
+            quote.put("author", author);
+            return quote;
+        }
+        // quote.put("id", -1);
+        quote.put("title", "quote is empty!!!");
+        quote.put("author", "no author");
+        return quote;
+    }
+
 }
