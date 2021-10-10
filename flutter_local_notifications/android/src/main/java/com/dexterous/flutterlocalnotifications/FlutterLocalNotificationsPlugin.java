@@ -1477,13 +1477,13 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
     private static void saveNextDayId(Context context, int id) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("flutter."+"today_idlk", id + 1);
+        editor.putInt("flutter."+"today_id", id + 1);
         editor.apply();
     }
 
     private static int loadTodayId(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
-        return sharedPreferences.getInt("flutter."+"today_idlk", 0);
+        return sharedPreferences.getInt("flutter."+"today_id", 1);
     }
 
     private static long fetchPlacesCount(SQLiteDatabase db) {
@@ -1507,8 +1507,10 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         if(cursor.moveToNext()){
             String itemTitle = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_TITLE));
             String author = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_AUTHOR));
+            cursor.close();
             return "\"" + itemTitle + "\"" + " _" + author;
         }
+        cursor.close();
         return "quote is empty!!!" +  " _getQuoteOfTheDay (native android code)";
     }
     public static void getNotificationDetailsForThisDayAndUpdateId(Context context, NotificationDetails notificationDetails){
