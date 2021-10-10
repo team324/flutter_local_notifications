@@ -1474,16 +1474,16 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
 
     // }
 
-    private static void saveNextDayId(Context context, int id) {
+    private static void saveTodayId(Context context, int id) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("flutter."+"today_id", id + 1);
+        editor.putInt("flutter."+"today_id", id);
         editor.apply();
     }
 
     private static int loadTodayId(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
-        return sharedPreferences.getInt("flutter."+"today_id", 1);
+        return sharedPreferences.getInt("flutter."+"today_id", 1) + 1;
     }
 
     private static long fetchPlacesCount(SQLiteDatabase db) {
@@ -1501,7 +1501,7 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         if (id >= rowsCount){
             id = 0;
         }
-        saveNextDayId(context, id);
+        saveTodayId(context, id);
         String rawSql = "SELECT * FROM " + QuoteDbHelper.TABLE_NAME + " WHERE " + QuoteDbHelper.COLUMN_ID + " = " + Integer.toString(id);
         Cursor cursor = db.rawQuery(rawSql, null);
         if(cursor.moveToNext()){
