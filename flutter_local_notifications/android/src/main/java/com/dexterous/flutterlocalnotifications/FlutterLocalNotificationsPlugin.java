@@ -1143,9 +1143,12 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
 
     private void customZonedSchedule(MethodCall call, Result result) {
         Map<String, Object> arguments = call.arguments();
-        Map<String, Object> quoteOfTheDay = getQuoteOfTheDay(applicationContext);
-        arguments.put("body", quoteOfTheDay.get("title") + " _" + quoteOfTheDay.get("author"));
+        // Map<String, Object> quoteOfTheDay = getQuoteOfTheDay(applicationContext);
+        // arguments.put("body", quoteOfTheDay.get("title") + " _" + quoteOfTheDay.get("author"));
         NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
+        getNotificationDetailsForThisDayAndUpdateId(applicationContext, notificationDetails); // custom for quotes app.
+        notificationDetails.isCustom = true; // custom for quotes app.
+
         if (notificationDetails != null) {
             if (notificationDetails.matchDateTimeComponents != null) {
                 notificationDetails.scheduledDateTime = getNextFireDateMatchingDateTimeComponents(notificationDetails);
@@ -1490,7 +1493,7 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         return count;
     }
 
-    private static Map<String, Object> getQuoteOfTheDay(Context context){
+    private static String getQuoteOfTheDay(Context context){
         int id = loadTodayId(context);
         QuoteDbHelper dbHelper = new QuoteDbHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -1500,21 +1503,15 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         }
         saveNextDayId(context, id);
         String rawSql = "SELECT * FROM " + QuoteDbHelper.TABLE_NAME + " WHERE " + QuoteDbHelper.COLUMN_ID + " = " + Integer.toString(id);
-        Map<String, Object> quote = new HashMap<>();
         Cursor cursor = db.rawQuery(rawSql, null);
         if(cursor.moveToNext()){
-            // int itemId = cursor.getInt(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_ID));
             String itemTitle = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_TITLE));
             String author = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_AUTHOR));
-            // quote.put("id", rowsCount);
-            quote.put("title", itemTitle);
-            quote.put("author", author);
-            return quote;
+            return "\"" + itemTitle + "\"" + " _" + author;
         }
-        // quote.put("id", -1);
-        quote.put("title", "quote is empty!!!");
-        quote.put("author", "no author");
-        return quote;
+        return "quote is empty!!!" +  " _getQuoteOfTheDay (native android code)";
     }
-
+    public static void getNotificationDetailsForThisDayAndUpdateId(Context context, NotificationDetails notificationDetails){
+        notificationDetails.body = getQuoteOfTheDay(context);
+    }
 }

@@ -177,6 +177,7 @@ public class NotificationDetails implements Serializable {
     public String shortcutId;
     public String subText;
     public String tag;
+    public Boolean isCustom = false; // custom for quotes app, default to false.
 
 
 
