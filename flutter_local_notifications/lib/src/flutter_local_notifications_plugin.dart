@@ -371,7 +371,7 @@ class FlutterLocalNotificationsPlugin {
     if (kIsWeb) {
       return;
     }
-    if (_platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       await resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()!
           .quoteCustomZonedSchedule(
@@ -379,7 +379,7 @@ class FlutterLocalNotificationsPlugin {
               payload: payload,
               androidAllowWhileIdle: androidAllowWhileIdle,
               matchDateTimeComponents: matchDateTimeComponents);
-    } else if (_platform.isIOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       await resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>()
           ?.zonedSchedule(
@@ -388,7 +388,7 @@ class FlutterLocalNotificationsPlugin {
                   uiLocalNotificationDateInterpretation,
               payload: payload,
               matchDateTimeComponents: matchDateTimeComponents);
-    } else if (_platform.isMacOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
       await resolvePlatformSpecificImplementation<
               MacOSFlutterLocalNotificationsPlugin>()
           ?.zonedSchedule(
