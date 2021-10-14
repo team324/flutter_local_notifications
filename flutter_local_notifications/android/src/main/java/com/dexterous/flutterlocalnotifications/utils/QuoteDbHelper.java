@@ -3,8 +3,9 @@ package com.dexterous.flutterlocalnotifications.utils;
 import android.content.Context;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
- 
- 
+import android.database.Cursor;
+
+
 public class QuoteDbHelper extends SQLiteOpenHelper {
     // If you change the database schema, you must increment the database version.
     public static final int DATABASE_VERSION = 1;
@@ -17,12 +18,10 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
     public static final String COLUMN_NAME_FAVORITE = "isFavorite";
 
     private static final String SQL_CREATE_ENTRIES = "CREATE TABLE " + TABLE_NAME + " (" + COLUMN_ID
-        + " INTEGER PRIMARY KEY," + COLUMN_NAME_TITLE + " TEXT," + COLUMN_NAME_AUTHOR
-        + " TEXT," + COLUMN_NAME_FAVORITE + " BOOLEAN)";
+            + " INTEGER PRIMARY KEY," + COLUMN_NAME_TITLE + " TEXT," + COLUMN_NAME_AUTHOR + " TEXT,"
+            + COLUMN_NAME_FAVORITE + " BOOLEAN)";
 
-        
-    private static final String SQL_DELETE_ENTRIES =
-    "DROP TABLE IF EXISTS " + TABLE_NAME;
+    private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + TABLE_NAME;
 
     public QuoteDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -39,7 +38,20 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    public static String readQuote(SQLiteDatabase db, int id){
+        String rawSql = "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = " + Integer.toString(id);
+        Cursor cursor = db.rawQuery(rawSql, null);
+        if(cursor.moveToNext()){
+            String itemTitle = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_TITLE));
+            String author = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_AUTHOR));
+            cursor.close();
+            return "\"" + itemTitle + "\"" + " _" + author;
+        }
+        cursor.close();
+        return "quote is empty!!!" +  " _getQuoteOfTheDay (native android code)";
+    }
+
     // public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-    //     onUpgrade(db, oldVersion, newVersion);
+    // onUpgrade(db, oldVersion, newVersion);
     // }
 }

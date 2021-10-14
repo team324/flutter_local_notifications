@@ -1143,10 +1143,8 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
 
     private void customZonedSchedule(MethodCall call, Result result) {
         Map<String, Object> arguments = call.arguments();
-        // Map<String, Object> quoteOfTheDay = getQuoteOfTheDay(applicationContext);
-        // arguments.put("body", quoteOfTheDay.get("title") + " _" + quoteOfTheDay.get("author"));
         NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
-        getNotificationDetailsForThisDayAndUpdateId(applicationContext, notificationDetails); // custom for quotes app.
+        initalizeNotificationDetailsForTheNextDay(applicationContext, notificationDetails); // custom for quotes app.
         notificationDetails.isCustom = true; // custom for quotes app.
 
         if (notificationDetails != null) {
@@ -1483,37 +1481,44 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
 
     private static int loadTodayId(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
-        return sharedPreferences.getInt("flutter."+"today_id", 1) + 1;
+        return sharedPreferences.getInt("flutter."+"today_id", 0);
     }
 
-    private static long fetchPlacesCount(SQLiteDatabase db) {
+    private static long fetchQuotesCount(SQLiteDatabase db) {
         String sql = "SELECT COUNT(*) FROM " + QuoteDbHelper.TABLE_NAME;
         SQLiteStatement statement = db.compileStatement(sql);
         long count = statement.simpleQueryForLong();
         return count;
     }
 
-    private static String getQuoteOfTheDay(Context context){
-        int id = loadTodayId(context);
+    public static void updateNotificationDetailsForNextDayAndUpdateId(Context context, NotificationDetails notificationDetails){
+        int id = loadTodayId(context) + 1; // the id of the quote of the day.
         QuoteDbHelper dbHelper = new QuoteDbHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int rowsCount = (int) fetchPlacesCount(db);
+        int rowsCount = (int) fetchQuotesCount(db);
         if (id >= rowsCount){
             id = 0;
         }
-        saveTodayId(context, id);
-        String rawSql = "SELECT * FROM " + QuoteDbHelper.TABLE_NAME + " WHERE " + QuoteDbHelper.COLUMN_ID + " = " + Integer.toString(id);
-        Cursor cursor = db.rawQuery(rawSql, null);
-        if(cursor.moveToNext()){
-            String itemTitle = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_TITLE));
-            String author = cursor.getString(cursor.getColumnIndexOrThrow(QuoteDbHelper.COLUMN_NAME_AUTHOR));
-            cursor.close();
-            return "\"" + itemTitle + "\"" + " _" + author;
-        }
-        cursor.close();
-        return "quote is empty!!!" +  " _getQuoteOfTheDay (native android code)";
+        saveTodayId(context, id);  // save the id of the quote of the day.
+        id += 1; // to schedual the notification for the next quote on the next day.
+        String body = QuoteDbHelper.readQuote(db, id);
+        dbHelper.close();
+        db.close();
+        notificationDetails.body = body;
     }
-    public static void getNotificationDetailsForThisDayAndUpdateId(Context context, NotificationDetails notificationDetails){
-        notificationDetails.body = getQuoteOfTheDay(context);
+
+    // initialize notifications for the next day withot updating the id.
+    private void initalizeNotificationDetailsForTheNextDay(Context context, NotificationDetails notificationDetails){
+        int id = loadTodayId(context) + 1; // the id of the quote of the day.
+        QuoteDbHelper dbHelper = new QuoteDbHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int rowsCount = (int) fetchQuotesCount(db);
+        if (id >= rowsCount){
+            id = 0;
+        }
+        String body = QuoteDbHelper.readQuote(db, id);
+        dbHelper.close();
+        db.close();
+        notificationDetails.body = body;
     }
 }
