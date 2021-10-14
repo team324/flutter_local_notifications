@@ -32,6 +32,7 @@ import androidx.core.app.Person;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
+import com.dexterous.flutterlocalnotifications.NotificationStyle;
 import com.dexterous.flutterlocalnotifications.models.BitmapSource;
 import com.dexterous.flutterlocalnotifications.models.DateTimeComponents;
 import com.dexterous.flutterlocalnotifications.models.IconSource;
@@ -1505,6 +1506,7 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         dbHelper.close();
         db.close();
         notificationDetails.body = body;
+        setBigText(notificationDetails, body);
     }
 
     // initialize notifications for the next day withot updating the id.
@@ -1520,5 +1522,18 @@ public class FlutterLocalNotificationsPlugin implements MethodCallHandler, Plugi
         dbHelper.close();
         db.close();
         notificationDetails.body = body;
+        setBigText(notificationDetails, body);
+    }
+
+    private static void setBigText(NotificationDetails notificationDetails, String bigText) {
+        if (notificationDetails.style == NotificationStyle.BigText) {
+            Boolean htmlFormatBigText = ((BigTextStyleInformation) notificationDetails.styleInformation).htmlFormatBigText;
+            String contentTitle = ((BigTextStyleInformation) notificationDetails.styleInformation).contentTitle;
+            Boolean htmlFormatContentTitle = ((BigTextStyleInformation) notificationDetails.styleInformation).htmlFormatContentTitle;
+            String summaryText = ((BigTextStyleInformation) notificationDetails.styleInformation).summaryText;
+            Boolean htmlFormatSummaryText = ((BigTextStyleInformation) notificationDetails.styleInformation).htmlFormatSummaryText;
+            notificationDetails.styleInformation = new BigTextStyleInformation(false, false, bigText, htmlFormatBigText,
+                    contentTitle, htmlFormatContentTitle, summaryText, htmlFormatSummaryText);
+        }
     }
 }
