@@ -1,3 +1,93 @@
+# [9.5.2]
+
+* [macOS] fixed issue [1585](https://github.com/MaikuB/flutter_local_notifications/issues/1585) where plugin causes a crash when a remote/push notification (e.g. via FCM) occurs
+
+# [9.5.1]
+
+* [Android] fixed issue when calling `getActiveNotificationMessagingStyle()` to get messaging style information for a notification with a tag. Thanks to PR from [Simon Ser](https://github.com/emersion)
+
+# [9.5.0]
+
+* [Android] added `getActiveNotificationMessagingStyle()` method to the `AndroidFlutterLocalNotificationsPlugin` class. This allows for getting the messaging style information of an active notification e.g. to append a message to an existing notification. Thanks to the PR from [Simon Ser](https://github.com/emersion)
+* Updated readme to fix an issue where clicking on the Android setup and iOS setup sections from table of contents wouldn't go the appropriate section. Thanks to the PR from [HendrikF](https://github.com/HendrikF)
+
+# [9.4.1]
+
+* Calling `initialize()` on a platform with passing the appropriate initialisation settings for it will now throw an `ArgumentError`. Whilst this may be technically a breaking change, it's been done as a minor change as the call was already throwing an unhandled exception in these scenarios. This change is to help provide more information on why it fails. Documentation has also been updated to provide more on information on this as the intialisation settings for each platform are nullable so developers aren't forced to provide settings for platforms they don't target. Thanks to the PR from [Zlati Pehlivanov](https://github.com/talamaska)
+* Updated docs to fix typos, adjust heading levels and use the term ["daylight saving time"](https://en.wikipedia.org/wiki/Daylight_saving_time) instead of "daylight savings". Thanks to the PR from [Ross Llewallyn](https://github.com/EnduringBeta)
+
+# [9.4.0]
+* [Android] Added `tag` to `ActiveNotification` that would allow for finding the notification's tag. Thanks to the PR from [Simon Ser](https://github.com/emersion)
+
+# [9.3.3]
+* [macOS] Fixed issue [1507](https://github.com/MaikuB/flutter_local_notifications/issues/1507) where calling the `requestPermissions()` method of the `MacOSFlutterLocalNotificationsPlugin` class led to a crash. This will be coalesced to assume that the `boolean` parameters around the requested permissions default to `false` to be consistent with the iOS implementation. Note that in 10.0.0 the method will have a breaking change so that these parameters are non-nullable
+
+# [9.3.2]
+
+* Fix issue [1485](https://github.com/MaikuB/flutter_local_notifications/issues/1485) where the addition of `colorized` property caused backwards compatibility issues with previously scheduled notifications as this would be null when deserialised from shared preferences
+
+# [9.3.1]
+
+* Fix issue [1479](https://github.com/MaikuB/flutter_local_notifications/issues/1479) that could cause compilation issue on the web by removing `dart:ffi` import
+
+# [9.3.0]
+
+* [Android] Updated how scheduled notifications are saved to shared preferences so it is done in the background. This is to fix issue [1378](https://github.com/MaikuB/flutter_local_notifications/issues/1378) where `pendingNotificationRequests` method may not report the correct number of scheduled notifications if it is invoked before the data had been saved to shared preferences
+* [Android] Added `colorized` property to `AndroidNotificationDetails` class. This can be used to apply a background colour to the notification but for most styles, this only works if a foreground service was used. Example app has been updated to demonstrate its usage. Thanks to the PR from [benechiu](https://github.com/benechiu)
+
+# [9.2.0]
+
+* [Android] Added `areNotificationsEnabled()` method to `AndroidFlutterLocalNotificationsPlugin`. This allows querying if notifications are enabled for the app calling the method. Thanks to the PR from [Konstantin Pelz](https://github.com/komape)
+* [Linux] Fix `initialize()` returning null all the time instead of returning an appropriate boolean value to indicate if plugin has been initialised 
+
+# [9.1.5]
+
+* Bumped `flutter_local_notifications_linux` dependency
+
+# [9.1.4]
+
+* [Android] Reverted change in 9.1.0 that added the `groupKey` to `ActiveNotification` as this was a potentially breaking change. This will instead be part of a major release
+
+# [9.1.3]
+
+* [Android] Reverts Android changes done in 9.1.2 and 9.1.1 due to reported stability issues. Ths means issue [1378](https://github.com/MaikuB/flutter_local_notifications/issues/1378) may still occur though is a rare occurrence and may require a different solution and assistance from the community with regards to testing
+
+# [9.1.2+1]
+
+* **BAD** [Android] some minor code clean up from 9.1.2 changes
+* Fixed a grammar issue in readme. Thanks to the PR from [Clément Besnier](https://github.com/clemsciences)
+
+
+# [9.1.2]
+
+* [Android] Fix NPE issue [1378](https://github.com/MaikuB/flutter_local_notifications/issues/1387) from change introduced in 9.1.1 in updating how notifications were written to shared preferences
+
+# [9.1.1]
+
+* **BAD** [Android] updated APIs the plugin uses to write to shared preferences in the background
+* [Android] fix  where there was a the `Future` for scheduling a notification could be completed prior to saving information on the scheduled notification to shared preferences. In this case the notification would still be scheduled but if the plugin was used to query the pending notifications quick enough, the plugin may have returned the incorrect number of pending notifications
+
+# [9.1.0]
+
+* **BAD** [Android] Added `groupKey` to `ActiveNotification` that would allow for finding the notification's group. Thanks to the PR from [Roman](https://github.com/drstranges)
+* [Android] Migrate maven repository from jcenter to mavenCentral. Thanks to the PR from [tigertore](https://github.com/tigertore)
+
+
+# [9.0.3]
+
+* [Android] Fixed issue [1362](https://github.com/MaikuB/flutter_local_notifications/issues/1362) so that the plugin refer to Android sound resources by the resource name instead of the resource id as the resource id could change over time e.g. if new resources are added. Note that this is a fix that can't be applied retroactively
+
+# [9.0.2]
+
+* [Android] Fixed issue [1357](https://github.com/MaikuB/flutter_local_notifications/issues/1357) where some details of a notification with formatted content weren't being returned
+* Bumped dependencies used by example app
+* Fixed grammar issue in readme in the `Scheduled Android notifications` section. Thanks to [Yousef Akiba](https://github.com/yousefakiba) for the PR
+* Updated example app and readme code around importing the `timezone` dependency so it uses the `all` variant of the IANA database that contains all timezones including those that are deprecated or may link to other timezones
+
+# [9.0.1]
+
+* Fixed issue [1346](https://github.com/MaikuB/flutter_local_notifications/issues/1346) where an exception is thrown when `onSelectNotification` callback isn't specified
+
 # [9.0.0]
 
 * **Breaking change** the `SelectNotificationCallback` and `DidReceiveLocalNotificationCallback` typedefs now map to functions that returns `void` instead of a `Future<dynamic>`. This change was done to better communicate the plugin doesn't actually await any asynchronous computation and is similar to how button pressed callbacks work for Flutter where they are typically use [`VoidCallback`](https://api.flutter.dev/flutter/dart-ui/VoidCallback.html)

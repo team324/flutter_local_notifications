@@ -15,7 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as image;
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/subjects.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -400,6 +400,11 @@ class _HomePageState extends State<HomePage> {
                       ),
                       PaddedElevatedButton(
                         buttonText:
+                            'Check if notifications are enabled for this app',
+                        onPressed: _areNotifcationsEnabledOnAndroid,
+                      ),
+                      PaddedElevatedButton(
+                        buttonText:
                             'Show plain notification with payload and update '
                             'channel description',
                         onPressed: () async {
@@ -610,6 +615,13 @@ class _HomePageState extends State<HomePage> {
                         buttonText: 'Start foreground service',
                         onPressed: () async {
                           await _startForegroundService();
+                        },
+                      ),
+                      PaddedElevatedButton(
+                        buttonText:
+                            'Start foreground service with blue background notification',
+                        onPressed: () async {
+                          await _startForegroundServiceWithBlueBackgroundNotification();
                         },
                       ),
                       PaddedElevatedButton(
@@ -1848,6 +1860,29 @@ class _HomePageState extends State<HomePage> {
             payload: 'item x');
   }
 
+  Future<void> _startForegroundServiceWithBlueBackgroundNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'your channel id',
+      'your channel name',
+      channelDescription: 'color background channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+      color: Colors.blue,
+      colorized: true,
+    );
+
+    /// only using foreground service can color the background
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.startForegroundService(
+            1, 'colored background text title', 'colored background text body',
+            notificationDetails: androidPlatformChannelSpecifics,
+            payload: 'item x');
+  }
+
   Future<void> _stopForegroundService() async {
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
@@ -1873,6 +1908,30 @@ class _HomePageState extends State<HomePage> {
               content:
                   Text('Channel with name ${androidNotificationChannel.name} '
                       'created'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ));
+  }
+
+  Future<void> _areNotifcationsEnabledOnAndroid() async {
+    final bool? areEnabled = await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.areNotificationsEnabled();
+    await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+              content: Text(areEnabled == null
+                  ? 'ERROR: received null'
+                  : (areEnabled
+                      ? 'Notifications are enabled'
+                      : 'Notifications are NOT enabled')),
               actions: <Widget>[
                 TextButton(
                   onPressed: () {
@@ -1961,8 +2020,16 @@ class _HomePageState extends State<HomePage> {
                   Text(
                     'id: ${activeNotification.id}\n'
                     'channelId: ${activeNotification.channelId}\n'
+                    'tag: ${activeNotification.tag}\n'
                     'title: ${activeNotification.title}\n'
                     'body: ${activeNotification.body}',
+                  ),
+                  TextButton(
+                    child: const Text('Get messaging style'),
+                    onPressed: () {
+                      _getActiveNotificationMessagingStyle(
+                          activeNotification.id, activeNotification.tag);
+                    },
                   ),
                   const Divider(color: Colors.black),
                 ],
@@ -1975,6 +2042,105 @@ class _HomePageState extends State<HomePage> {
         'code: ${error.code}\n'
         'message: ${error.message}',
       );
+    }
+  }
+
+  Future<void> _getActiveNotificationMessagingStyle(int id, String? tag) async {
+    Widget dialogContent;
+    try {
+      final messagingStyle = await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()!
+          .getActiveNotificationMessagingStyle(id, tag: tag);
+      if (messagingStyle == null) {
+        dialogContent = const Text('No messaging style');
+      } else {
+        dialogContent = SingleChildScrollView(
+            child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('person: ${_formatPerson(messagingStyle.person)}\n'
+                'conversationTitle: ${messagingStyle.conversationTitle}\n'
+                'groupConversation: ${messagingStyle.groupConversation}'),
+            const Divider(color: Colors.black),
+            if (messagingStyle.messages == null) const Text('No messages'),
+            if (messagingStyle.messages != null)
+              for (final msg in messagingStyle.messages!)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('text: ${msg.text}\n'
+                        'timestamp: ${msg.timestamp}\n'
+                        'person: ${_formatPerson(msg.person)}'),
+                    const Divider(color: Colors.black),
+                  ],
+                ),
+          ],
+        ));
+      }
+    } on PlatformException catch (error) {
+      dialogContent = Text(
+        'Error calling "getActiveNotificationMessagingStyle"\n'
+        'code: ${error.code}\n'
+        'message: ${error.message}',
+      );
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Messaging style'),
+        content: dialogContent,
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPerson(Person? person) {
+    if (person == null) {
+      return 'null';
+    }
+
+    final List<String> attrs = <String>[];
+    if (person.name != null) {
+      attrs.add('name: "${person.name}"');
+    }
+    if (person.uri != null) {
+      attrs.add('uri: "${person.uri}"');
+    }
+    if (person.key != null) {
+      attrs.add('key: "${person.key}"');
+    }
+    if (person.important) {
+      attrs.add('important: true');
+    }
+    if (person.bot) {
+      attrs.add('bot: true');
+    }
+    if (person.icon != null) {
+      attrs.add('icon: ${_formatAndroidIcon(person.icon)}');
+    }
+    return 'Person(${attrs.join(', ')})';
+  }
+
+  String _formatAndroidIcon(Object? icon) {
+    if (icon == null) {
+      return 'null';
+    }
+    if (icon is DrawableResourceAndroidIcon) {
+      return 'DrawableResourceAndroidIcon("${icon.data}")';
+    } else if (icon is ContentUriAndroidIcon) {
+      return 'ContentUriAndroidIcon("${icon.data}")';
+    } else {
+      return 'AndroidIcon()';
     }
   }
 
