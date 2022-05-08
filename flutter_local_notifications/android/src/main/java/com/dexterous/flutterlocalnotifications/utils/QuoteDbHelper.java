@@ -3,6 +3,7 @@ package com.dexterous.flutterlocalnotifications.utils;
 import android.content.Context;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.database.Cursor;
 
 
@@ -37,8 +38,15 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
         db.execSQL(SQL_DELETE_ENTRIES);
         onCreate(db);
     }
-
-    public static String readQuote(SQLiteDatabase db, int id){
+    public long fetchQuotesCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String sql = "SELECT COUNT(*) FROM " + QuoteDbHelper.TABLE_NAME;
+        SQLiteStatement statement = db.compileStatement(sql);
+        long count = statement.simpleQueryForLong();
+        return count;
+    }
+    public String readQuote(int id){
+        SQLiteDatabase db = this.getReadableDatabase();
         String rawSql = "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = " + Integer.toString(id);
         Cursor cursor = db.rawQuery(rawSql, null);
         if(cursor.moveToNext()){
@@ -48,10 +56,12 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
             return "\"" + itemTitle + "\"" + " _" + author;
         }
         cursor.close();
+        db.close();
         return "quote is empty!!!" +  " _getQuoteOfTheDay (native android code)";
     }
 
     // public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     // onUpgrade(db, oldVersion, newVersion);
     // }
+
 }

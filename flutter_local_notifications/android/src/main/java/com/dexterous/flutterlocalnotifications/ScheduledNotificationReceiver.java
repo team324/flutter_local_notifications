@@ -41,8 +41,7 @@ public class ScheduledNotificationReceiver extends BroadcastReceiver {
       FlutterLocalNotificationsPlugin.showNotification(context, notificationDetails);
       if(notificationDetails.isCustom){ // custom for quotes app.
         // Toast.makeText(context, "matchDateTimeComponents, Custoooom", Toast.LENGTH_LONG).show();
-        FlutterLocalNotificationsPlugin.updateNotificationDetailsForNextDayAndUpdateId(context, notificationDetails);
-        FlutterLocalNotificationsPlugin.zonedScheduleNextNotificationMatchingDateComponents(context, notificationDetails);
+        FlutterLocalNotificationsPlugin.customZonedScheduleNextNotificationMatchingDateComponents(context, notificationDetails);
       }else if (notificationDetails.scheduledNotificationRepeatFrequency != null) {
         FlutterLocalNotificationsPlugin.zonedScheduleNextNotification(context, notificationDetails);
       } else if (notificationDetails.matchDateTimeComponents != null) {
