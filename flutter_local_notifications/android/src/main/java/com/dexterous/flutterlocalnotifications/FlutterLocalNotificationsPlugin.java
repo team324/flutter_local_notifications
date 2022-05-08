@@ -58,10 +58,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 
-import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -1040,6 +1037,33 @@ public class FlutterLocalNotificationsPlugin
     zonedScheduleNotification(context, notificationDetails, true);
   }
 
+  private void customZonedSchedule(MethodCall call, Result result) {
+    Map<String, Object> arguments = call.arguments();
+    NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
+    initalizeNotificationDetailsForTheNextDay(applicationContext, notificationDetails); // custom for quotes app.
+    notificationDetails.isCustom = true; // custom for quotes app.
+
+    if (notificationDetails != null) {
+        if (notificationDetails.matchDateTimeComponents != null) {
+            notificationDetails.scheduledDateTime = getNextFireDateMatchingDateTimeComponents(notificationDetails);
+        }
+        zonedScheduleNotification(applicationContext, notificationDetails, true);
+        result.success(null);
+    }
+  }
+
+  static void customZonedScheduleNextNotificationMatchingDateComponents(
+      Context context, NotificationDetails notificationDetails) {
+    updateNotificationDetailsForNextDayAndUpdateId(context, notificationDetails);
+    initAndroidThreeTen(context);
+    String nextFireDate = getNextFireDateMatchingDateTimeComponents(notificationDetails);
+    if (nextFireDate == null) {
+      return;
+    }
+    notificationDetails.scheduledDateTime = nextFireDate;
+    zonedScheduleNotification(context, notificationDetails, true);
+  }
+
   static void zonedScheduleNextNotificationMatchingDateComponents(
       Context context, NotificationDetails notificationDetails) {
     initAndroidThreeTen(context);
@@ -1866,26 +1890,17 @@ public class FlutterLocalNotificationsPlugin
         return sharedPreferences.getInt("flutter."+"today_id", 0);
     }
 
-    private static long fetchQuotesCount(SQLiteDatabase db) {
-        String sql = "SELECT COUNT(*) FROM " + QuoteDbHelper.TABLE_NAME;
-        SQLiteStatement statement = db.compileStatement(sql);
-        long count = statement.simpleQueryForLong();
-        return count;
-    }
-
     public static void updateNotificationDetailsForNextDayAndUpdateId(Context context, NotificationDetails notificationDetails){
         int id = loadTodayId(context) + 1; // the id of the quote of the day.
         QuoteDbHelper dbHelper = new QuoteDbHelper(context);
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int rowsCount = (int) fetchQuotesCount(db);
+        int rowsCount = (int) dbHelper.fetchQuotesCount();
         if (id >= rowsCount){
             id = 0;
         }
         saveTodayId(context, id);  // save the id of the quote of the day.
         id += 1; // to schedual the notification for the next quote on the next day.
-        String body = QuoteDbHelper.readQuote(db, id);
-        dbHelper.close();
-        db.close();
+        String body = dbHelper.readQuote(id);
+        // dbHelper.close();
         notificationDetails.body = body;
         setBigText(notificationDetails, body);
     }
@@ -1894,14 +1909,12 @@ public class FlutterLocalNotificationsPlugin
     private void initalizeNotificationDetailsForTheNextDay(Context context, NotificationDetails notificationDetails){
         int id = loadTodayId(context) + 1; // the id of the quote of the day.
         QuoteDbHelper dbHelper = new QuoteDbHelper(context);
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int rowsCount = (int) fetchQuotesCount(db);
+        int rowsCount = (int) dbHelper.fetchQuotesCount();
         if (id >= rowsCount){
             id = 0;
         }
-        String body = QuoteDbHelper.readQuote(db, id);
-        dbHelper.close();
-        db.close();
+        String body = dbHelper.readQuote(id);
+        // dbHelper.close();
         notificationDetails.body = body;
         setBigText(notificationDetails, body);
     }
