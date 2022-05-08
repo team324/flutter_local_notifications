@@ -1036,6 +1036,21 @@ public class FlutterLocalNotificationsPlugin
     notificationDetails.scheduledDateTime = nextFireDate;
     zonedScheduleNotification(context, notificationDetails, true);
   }
+  
+    private void customZonedSchedule(MethodCall call, Result result) {
+        Map<String, Object> arguments = call.arguments();
+        NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
+        initalizeNotificationDetailsForTheNextDay(applicationContext, notificationDetails); // custom for quotes app.
+        notificationDetails.isCustom = true; // custom for quotes app.
+
+        if (notificationDetails != null) {
+            if (notificationDetails.matchDateTimeComponents != null) {
+                notificationDetails.scheduledDateTime = getNextFireDateMatchingDateTimeComponents(notificationDetails);
+            }
+            zonedScheduleNotification(applicationContext, notificationDetails, true);
+            result.success(null);
+        }
+    }
 
   private void customZonedSchedule(MethodCall call, Result result) {
     Map<String, Object> arguments = call.arguments();
