@@ -17,10 +17,11 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
     public static final String COLUMN_NAME_TITLE = "text";
     public static final String COLUMN_NAME_AUTHOR = "author";
     public static final String COLUMN_NAME_FAVORITE = "isFavorite";
+    public static final String COLUMN_NAME_DATE = "dateDisplayedDiff";
 
     private static final String SQL_CREATE_ENTRIES = "CREATE TABLE " + TABLE_NAME + " (" + COLUMN_ID
             + " INTEGER PRIMARY KEY," + COLUMN_NAME_TITLE + " TEXT," + COLUMN_NAME_AUTHOR + " TEXT,"
-            + COLUMN_NAME_FAVORITE + " BOOLEAN)";
+            + COLUMN_NAME_FAVORITE + " BOOLEAN" + COLUMN_NAME_DATE + "INTEGER)";
 
     private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + TABLE_NAME;
 
@@ -64,4 +65,11 @@ public class QuoteDbHelper extends SQLiteOpenHelper {
     // onUpgrade(db, oldVersion, newVersion);
     // }
 
+        
+    public void updateDateDisplayedDiff(int id, int dateDisplayedDiff){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String rawSql = "UPDATE " + TABLE_NAME + " SET " + COLUMN_NAME_DATE + " = " + Integer.toString(dateDisplayedDiff) +  " WHERE " + COLUMN_ID + " = " + Integer.toString(id);
+        db.execSQL(rawSql);
+        db.close();
+    }
 }

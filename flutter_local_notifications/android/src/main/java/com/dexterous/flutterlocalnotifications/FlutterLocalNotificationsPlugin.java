@@ -64,6 +64,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
+import java.time.LocalDate;   
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1047,6 +1049,7 @@ public class FlutterLocalNotificationsPlugin
         if (notificationDetails.matchDateTimeComponents != null) {
             notificationDetails.scheduledDateTime = getNextFireDateMatchingDateTimeComponents(notificationDetails);
         }
+        saveDateDisplayedDiff(applicationContext, notificationDetails.scheduledDateTime.substring(0, 10));
         zonedScheduleNotification(applicationContext, notificationDetails, true);
         result.success(null);
     }
@@ -1061,6 +1064,7 @@ public class FlutterLocalNotificationsPlugin
       return;
     }
     notificationDetails.scheduledDateTime = nextFireDate;
+    saveDateDisplayedDiff(context, nextFireDate.substring(0, 10));
     zonedScheduleNotification(context, notificationDetails, true);
   }
 
@@ -1904,6 +1908,25 @@ public class FlutterLocalNotificationsPlugin
         notificationDetails.body = body;
         setBigText(notificationDetails, body);
     }
+
+    
+    private static void saveDateDisplayedDiff(Context context, String dateDisplayed, int id){
+      SharedPreferences sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
+      String installationDateStr = sharedPreferences.getString("flutter."+"installationDate", "2022-05-07");
+
+      LocalDate installationDate = LocalDate.parse(installationDateStr);
+      LocalDate dateDisplayedDiff = LocalDate.parse(dateDisplayed);
+
+      int diff = Period.between(installationDate, dateDisplayedDiff).getDays();
+
+      QuoteDbHelper dbHelper = new QuoteDbHelper(context);
+      dbHelper.updateDateDisplayedDiff(id, diff);
+    } 
+    private static void saveDateDisplayedDiff(Context context, String dateDisplayed){
+      int id = loadTodayId(context);
+      saveDateDisplayedDiff(context, dateDisplayed, id);
+    } 
+
 
     // initialize notifications for the next day withot updating the id.
     private void initalizeNotificationDetailsForTheNextDay(Context context, NotificationDetails notificationDetails){
